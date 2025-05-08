@@ -20,11 +20,12 @@ def show_matrix(mat, name):
 
 
 class MNIST_MLP(object):
-    def __init__(self, batch_size=100, input_size=784,hidden1=32,hidden2=16,out_classes=10,lr=0.01, max_epoch=1,print_iter=100):
+    def __init__(self, batch_size=100, input_size=784,hidden1=128,hidden2=64,hidden3=32,out_classes=10,lr=0.01, max_epoch=1,print_iter=100):
         self.batch_size = batch_size
         self.input_size = input_size
         self.hidden1 = hidden1
         self.hidden2 = hidden2
+        self.hidden3 = hidden3
         self.out_classes = out_classes
         self.lr = lr
         self.max_epoch = max_epoch
@@ -75,9 +76,11 @@ class MNIST_MLP(object):
         self.relu1=ReLULayer()
         self.fc2 = FullyConnectedLayer(self.hidden1, self.hidden2)
         self.relu2 = ReLULayer()
-        self.fc3=FullyConnectedLayer(self.hidden2, self.out_classes)
+        self.fc3 = FullyConnectedLayer(self.hidden2, self.hidden3)
+        self.relu3 = ReLULayer()
+        self.fc4 = FullyConnectedLayer(self.hidden3, self.out_classes)
         self.softmax=SoftmaxLossLayer()
-        self.update_layer_list=[self.fc1,self.fc2,self.fc3]
+        self.update_layer_list=[self.fc1,self.fc2,self.fc3,self.fc4]
 
     def init_model(self):
         print('Initializing parameters of each layer in MLP...')
@@ -90,6 +93,7 @@ class MNIST_MLP(object):
         self.fc1.load_param(params['w1'],params['b1'])
         self.fc2.load_param(params['w2'],params['b2'])
         self.fc3.load_param(params['w3'],params['b3'])
+        self.fc4.load_param(params['w4'],params['b4'])
 
 
     def save_model(self, param_dir):
@@ -98,6 +102,7 @@ class MNIST_MLP(object):
         params['w1'], params['b1'] = self.fc1.save_param()
         params['w2'], params['b2'] = self.fc2.save_param()
         params['w3'], params['b3'] = self.fc3.save_param()
+        params['w4'], params['b4'] = self.fc4.save_param()
         # print( params)
         np.save(param_dir, params)
 
@@ -109,7 +114,9 @@ class MNIST_MLP(object):
         h2 = self.fc2.forward(h1)
         h2 = self.relu2.forward(h2)
         h3 = self.fc3.forward(h2)
-        prob=self.softmax.forward(h3)
+        h3 = self.relu3.forward(h3)
+        h4 = self.fc4.forward(h3)
+        prob=self.softmax.forward(h4)
         return prob
 
 
@@ -117,7 +124,9 @@ class MNIST_MLP(object):
     def backward(self):   # 神经网络的反向传播
         # TODO：神经网络的反向传播
         dloss = self.softmax.backward()
-        dh3 = self.fc3.backward(dloss)
+        dh4 = self.fc4.backward(dloss)
+        dh3 = self.relu3.backward(dh4)
+        dh3 = self.fc3.backward(dh3)
         dh2 = self.relu2.backward(dh3)
         dh2 = self.fc2.backward(dh2)
         dh1 = self.relu1.backward(dh2)
@@ -161,14 +170,14 @@ class MNIST_MLP(object):
 
 
 def build_mnist_mlp(param_dir='weight.npy'):
-    h1,h2,e=256,128,10
-    mlp=MNIST_MLP(hidden1=h1,hidden2=h2,max_epoch=e)
+    h1,h2,h3,e=128,64,32,35
+    mlp=MNIST_MLP(hidden1=h1,hidden2=h2,hidden3=h3,max_epoch=e)
     mlp.load_data()
     mlp.build_model()
     mlp.init_model()
     mlp.train()
-    mlp.save_model('mlp-%d-%d-%depoch.npy'%(h1,h2,e))
-    mlp.load_model('mlp-%d-%d-%depoch.npy'%(h1,h2,e))
+    mlp.save_model('mlp-%d-%d-%d-%depoch.npy'%(h1,h2,h3,e))
+    mlp.load_model('mlp-%d-%d-%d-%depoch.npy'%(h1,h2,h3,e))
     return mlp
 
 
