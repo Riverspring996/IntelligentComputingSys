@@ -98,7 +98,7 @@ class MNIST_MLP(object):
         params['w1'], params['b1'] = self.fc1.save_param()
         params['w2'], params['b2'] = self.fc2.save_param()
         params['w3'], params['b3'] = self.fc3.save_param()
-        print( params)
+        # print( params)
         np.save(param_dir, params)
 
 
@@ -161,7 +161,7 @@ class MNIST_MLP(object):
 
 
 def build_mnist_mlp(param_dir='weight.npy'):
-    h1,h2,e=32,16,10
+    h1,h2,e=256,128,10
     mlp=MNIST_MLP(hidden1=h1,hidden2=h2,max_epoch=e)
     mlp.load_data()
     mlp.build_model()
